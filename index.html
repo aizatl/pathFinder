@@ -1,0 +1,165 @@
+<!DOCTYPE HTML>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>PathFinding.js</title>
+
+    <link rel="stylesheet" href="./css/style.css" />
+    <link rel="stylesheet" href="./lib/themes/jquery.ui.all.css" />
+
+    <script type="text/javascript" src="./lib/raphael-min.js"></script>
+    <script type="text/javascript" src="./lib/es5-shim.min.js"></script>
+    <script type="text/javascript" src="./lib/jquery-1.7.2.min.js"></script>
+    <script type="text/javascript" src="./lib/state-machine.min.js"></script>
+    <script type="text/javascript" src="./lib/async.min.js"></script>
+
+    <script type="text/javascript" src="./lib/ui/jquery.ui.core.min.js"></script>
+    <script type="text/javascript" src="./lib/ui/jquery.ui.widget.min.js"></script>
+    <script type="text/javascript" src="./lib/ui/jquery.ui.mouse.min.js"></script>
+    <script type="text/javascript" src="./lib/ui/jquery.ui.draggable.min.js"></script>
+    <script type="text/javascript" src="./lib/ui/jquery.ui.accordion.min.js"></script>
+    <script type="text/javascript" src="./lib/ui/jquery.ui.slider.min.js"></script>
+
+    <script type="text/javascript" src="./lib/pathfinding-browser.min.js"></script>
+
+    <script type="text/javascript" src="./js/view.js"></script>
+    <script type="text/javascript" src="./js/controller.js"></script>
+    <script type="text/javascript" src="./js/panel.js"></script>
+    <script type="text/javascript" src="./js/main.js"></script>
+  </head>
+  <body>
+      <div id="draw_area"></div>
+      
+
+      <div id="instructions_panel" class="panel">
+          <header>
+              <h2 class="header_title">Instructions</h2>
+              <span id="hide_instructions">hide</span>
+          </header>
+          Click within the <span class="white">white</span> grid and drag your mouse to draw obstacles. <br>
+          Drag the <span class="green">green</span> node to set the start position. <br>
+          Drag the <span class="red">red</span> node to set the end position. <br>
+          Choose an algorithm from the right-hand panel. <br>
+          Click Start Search in the lower-right corner to start the animation.
+      </div>
+
+      <div id="algorithm_panel" class="panel right_panel">
+          <header><h2 class="header_title">Select Destination</h2></header>
+
+          <div class="accordion">
+              <h3 id="astar_header"><a href="#">Floor 1</a></h3>
+              <div id="astar_section" class="finder_section">
+                  <div id="astar_heuristic" class="sub_options">
+                      <div class="radio-grid">
+                          <label><input type="radio" name="destination" value="1,12,3"> A1</label>
+                          <label><input type="radio" name="destination" value="1,16,3"> A2</label>
+                          <label><input type="radio" name="destination" value="1,20,3"> A3</label>
+                          <label><input type="radio" name="destination" value="1,23,3"> A4</label>
+                          <label><input type="radio" name="destination" value="1,26,3"> A5</label>
+                          <label><input type="radio" name="destination" value="1,30,3"> A6</label>
+
+                          <label><input type="radio" name="destination" value="1,10,3"> B1</label>
+                          <label><input type="radio" name="destination" value="1,10,5"> B2</label>
+                          <label><input type="radio" name="destination" value="1,10,6"> B3</label>
+                          <label><input type="radio" name="destination" value="1,10,8"> B4</label>
+                          <label><input type="radio" name="destination" value="1,10,9"> B5</label>
+                          <label><input type="radio" name="destination" value="1,10,11"> B6</label>
+                          <label><input type="radio" name="destination" value="1,10,12"> B7</label>
+                          <label><input type="radio" name="destination" value="1,10,13"> B8</label>
+
+                          <label><input type="radio" name="destination" value="1,13,13"> C1</label>
+                          <label><input type="radio" name="destination" value="1,17,13"> C2</label>
+                          <label><input type="radio" name="destination" value="1,23,13"> C3</label>
+                          <label><input type="radio" name="destination" value="1,27,13"> C4</label>
+                          <label><input type="radio" name="destination" value="1,30,13"> C5</label>
+
+                          <label><input type="radio" name="destination" value="1,16,5"> D1</label>
+                          <label><input type="radio" name="destination" value="1,20,5"> D2</label>
+                          <label><input type="radio" name="destination" value="1,23,5"> D3</label>
+                          <label><input type="radio" name="destination" value="1,16,11"> D4</label>
+                          <label><input type="radio" name="destination" value="1,20,11"> D5</label>
+                          <label><input type="radio" name="destination" value="1,23,11"> D6</label>
+
+                          <label><input type="radio" name="destination" value="1,32,3"> E1</label>
+                          <label><input type="radio" name="destination" value="1,32,5"> E2</label>
+                          <label><input type="radio" name="destination" value="1,32,6"> E3</label>
+                          <label><input type="radio" name="destination" value="1,32,8"> E4</label>
+                          <label><input type="radio" name="destination" value="1,32,9"> E5</label>
+                          <label><input type="radio" name="destination" value="1,32,11"> E6</label>
+                          <label><input type="radio" name="destination" value="1,32,12"> E7</label>
+                          <label><input type="radio" name="destination" value="1,32,13"> E8</label>
+                      </div>
+
+                  </div>
+              </div>
+
+              <h3 id="astar_header"><a href="#">Floor 2</a></h3>
+              <div id="astar_section" class="finder_section">
+                  <div id="astar_heuristic" class="sub_options">
+                      <div class="radio-grid">
+                          <label><input type="radio" name="destination" value="2,12,3"> A1</label>
+                          <label><input type="radio" name="destination" value="2,16,3"> A2</label>
+                          <label><input type="radio" name="destination" value="2,20,3"> A3</label>
+                          <label><input type="radio" name="destination" value="2,23,3"> A4</label>
+                          <label><input type="radio" name="destination" value="2,26,3"> A5</label>
+                          <label><input type="radio" name="destination" value="2,30,3"> A6</label>
+
+                          <label><input type="radio" name="destination" value="2,10,3"> B1</label>
+                          <label><input type="radio" name="destination" value="2,10,5"> B2</label>
+                          <label><input type="radio" name="destination" value="2,10,6"> B3</label>
+                          <label><input type="radio" name="destination" value="2,10,8"> B4</label>
+                          <label><input type="radio" name="destination" value="2,10,9"> B5</label>
+                          <label><input type="radio" name="destination" value="2,10,11"> B6</label>
+                          <label><input type="radio" name="destination" value="2,10,12"> B7</label>
+                          <label><input type="radio" name="destination" value="2,10,13"> B8</label>
+
+                          <label><input type="radio" name="destination" value="2,13,13"> C1</label>
+                          <label><input type="radio" name="destination" value="2,17,13"> C2</label>
+                          <label><input type="radio" name="destination" value="2,23,13"> C3</label>
+                          <label><input type="radio" name="destination" value="2,27,13"> C4</label>
+                          <label><input type="radio" name="destination" value="2,30,13"> C5</label>
+
+                          <label><input type="radio" name="destination" value="2,16,5"> D1</label>
+                          <label><input type="radio" name="destination" value="2,20,5"> D2</label>
+                          <label><input type="radio" name="destination" value="2,23,5"> D3</label>
+                          <label><input type="radio" name="destination" value="2,16,11"> D4</label>
+                          <label><input type="radio" name="destination" value="2,20,11"> D5</label>
+                          <label><input type="radio" name="destination" value="2,23,11"> D6</label>
+
+                          <label><input type="radio" name="destination" value="2,32,3"> E1</label>
+                          <label><input type="radio" name="destination" value="2,32,5"> E2</label>
+                          <label><input type="radio" name="destination" value="2,32,6"> E3</label>
+                          <label><input type="radio" name="destination" value="2,32,8"> E4</label>
+                          <label><input type="radio" name="destination" value="2,32,9"> E5</label>
+                          <label><input type="radio" name="destination" value="2,32,11"> E6</label>
+                          <label><input type="radio" name="destination" value="2,32,12"> E7</label>
+                          <label><input type="radio" name="destination" value="2,32,13"> E8</label>
+                      </div>
+
+                  </div>
+              </div>
+
+
+
+          </div><!-- .accordion -->
+      </div><!-- #algorithm_panel -->
+
+      <div id="play_panel" class="panel right_panel">
+          <div style="display: flex; gap: 20px; margin-bottom: 10px;">
+              <label><input type="checkbox" id="checkbox_lift" checked> Lift</label>
+              <label><input type="checkbox" id="checkbox_stair"> Stair</label>
+              <label><input type="checkbox" id="checkbox_escalator"> Escalator</label>
+          </div>
+          <button id="button1" class="control_button">Start Search</button>
+          <button id="button2" class="control_button">Pause Search</button>
+          <button id="button3" class="control_button">Clear Walls</button>
+      </div>
+
+      <div id="stats"></div>
+
+      <footer>
+          <a href="http://github.com/qiao/PathFinding.js"></a>
+      </footer>
+
+  </body>
+</html>
