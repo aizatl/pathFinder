@@ -199,7 +199,7 @@ $.extend(Controller, {
         grid = this.grid.clone();
         
         
-        //var lifts = [
+        //var lifts = [hahah
         //    { x: 10, y: 1 },
         //    { x: 11, y: 25 },
         //    { x: 51, y: 25 },
