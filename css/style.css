@@ -2,7 +2,7 @@ body {
     padding: 0px;
     margin: 0px;
     overflow: hidden;
-    background: url('http://localhost:53175/doc/floorone.png') no-repeat;
+    background: url('http://localhost:51188/doc/floorone.png') no-repeat;
     background-size: 75% 80%;
     margin: 0;
     overflow: hidden; /* Prevents scrollbars */
@@ -10,6 +10,7 @@ body {
 
 input {
     cursor: pointer;
+
 }
 
 h1, h2, h3, h4, h5, h6 {
