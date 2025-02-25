@@ -121,30 +121,7 @@ $.extend(Controller, {
         return StateMachine.ASYNC;
         // => ready
     },
-    onleavenone1: function () {
-        var numCols = this.gridSize[0],
-            numRows = this.gridSize[1];
-
-        this.grid = new PF.Grid(numCols, numRows);
-
-        View.init({
-            numCols: numCols,
-            numRows: numRows
-        });
         
-        View.generateGrid(() => {
-            Controller.setDefaultStartEndPos();
-            Controller.bindEvents();
-            Controller.transition(); // Transit to the next state (ready)
-
-            this.$buttons = $('.control_button');
-            this.hookPathFinding();
-            
-            
-        });
-
-        return StateMachine.ASYNC;
-    },
 
     ondrawWall: function(event, from, to, gridX, gridY) {
         this.setWalkableAt(gridX, gridY, false);
@@ -155,6 +132,40 @@ $.extend(Controller, {
         this.setWalkableAt(gridX, gridY, true);
         // => erasingWall
     },
+    yenKShortestPaths: function (grid, finder, startX, startY, endX, endY, K) {
+        let paths = [];
+        let gridClone = grid.clone(); 
+        let shortestPath = finder.findPath(startX, startY, endX, endY, gridClone);
+
+        if (shortestPath.length === 0) {
+            console.warn("No path found!");
+            return [];
+        }
+
+        paths.push(shortestPath);
+
+        // Create a new grid for blocking previous paths
+        //let newGrid = grid.clone();
+        let latestGrid = grid.clone(); 
+        for (let k = 1; k < K; k++) {
+            let newGrid = latestGrid.clone(); 
+            // Block the previous path (except start and end)
+            for (let i = 1; i < paths[k - 1].length - 1; i++) { // Skip first & last nodes
+                let [x, y] = paths[k - 1][i];
+                newGrid.setWalkableAt(x, y, false); // Block the node to avoid repetition
+            }
+
+            let newPath = finder.findPath(startX, startY, endX, endY, newGrid);
+
+            if (newPath.length === 0) break; // No more alternative paths
+
+            console.log('Alternative path ' + k + ': ', newPath);
+            paths.push(newPath); // Store the alternative path
+        }
+
+        return paths;
+    },
+
     onsearch: function (event, from, to) {
         let liftChecked, stairChecked, escalatorChecked;
         var currentPage = window.location.pathname;
@@ -210,19 +221,29 @@ $.extend(Controller, {
 
 
         if (this.endFloor === 1) {
-            this.path = finder.findPath(
-                this.startX, this.startY, this.endX, this.endY, grid
-            );
-            if (this.path.length < 1) {
+            //this.path = finder.findPath(
+            //    this.startX, this.startY, this.endX, this.endY, grid
+            //);
+            let K = 2; // Number of alternative paths to find
+            this.paths = this.yenKShortestPaths(grid, finder, this.startX, this.startY, this.endX, this.endY, K);
+            for (let i = 0; i < this.paths.length; i++) {
+                //View.drawPath(this.paths[i]);
+                console.log('path for ' + (i + 1) + ' is : ' + JSON.stringify(this.paths[i]));
+            }
+            if (this.paths.length < 1) {
                 alert('No path found');
                 return;
             }
+
             console.log(`Start at (${this.startX}, ${this.startY}) and end at (${this.endX}, ${this.endY}) `);
+            //sini aizat
+            //this.loop();
+            //View.drawPath(this.paths[0], 0);
+            //View.drawPath(this.paths[1], 1);
+            //View.drawPath(this.paths[2], 2);
+            //return;
         }
         else {
-            
-
-            
             var lifts = [
                 { x: 8, y: 1 },
                 { x: 9, y: 15 },
@@ -290,25 +311,33 @@ $.extend(Controller, {
 
                 }
 
-                this.path = finder.findPath(
+                this.paths = finder.findPath(
                     this.startX, this.startY, allPossibleConnection[liftChoosen].x, allPossibleConnection[liftChoosen].y, grid
                 );
-                if (this.path.length < 1) {
+                if (this.paths.length < 1) {
                     alert('No path found to any lift');
                     return;
                 }
                 localStorage.setItem("startLiftX", allPossibleConnection[liftChoosen].x);
                 localStorage.setItem("startLiftY", allPossibleConnection[liftChoosen].y);
                 console.log(`to lift, Start at (${this.startX}, ${this.startY}) and end at (10, 1) `);
+                this.operationCount = this.operations.length;
+                timeEnd = window.performance ? performance.now() : Date.now();
+                this.timeSpent = (timeEnd - timeStart).toFixed(4);
+                this.loop();
+                View.drawPath(this.paths, 0);
+                console.log("Current state lepas draw ke lift:", Controller.current); 
+                return;
             }
             else {
                 x = localStorage.getItem("startLiftX");
                 y = localStorage.getItem("startLiftY");
                 this.setStartPos(x, y);
-                this.path = finder.findPath(
-                    x, y, this.endX, this.endY, grid
-                );
-                if (this.path.length < 1) {
+                this.paths = this.yenKShortestPaths(grid, finder, x, y, this.endX, this.endY, 3);
+                //this.path = finder.findPath(
+                //    x, y, this.endX, this.endY, grid
+                //);
+                if (this.paths.length < 1) {
                     alert('No path found to the destination');
                     return;
                 }
@@ -336,23 +365,26 @@ $.extend(Controller, {
 
         
         
-        if (this.path.length > 0) {
-            console.log("Path found:", this.path);
+        if (this.paths.length > 0) {
+            console.log("Path found:", this.paths);
         } else {
             console.warn(`No path found! Check if the start (${this.startX}, ${this.startY}) and end (${this.endX}, ${this.endY}) positions are reachable.`);
+            
         }
         this.operationCount = this.operations.length;
         timeEnd = window.performance ? performance.now() : Date.now();
         this.timeSpent = (timeEnd - timeStart).toFixed(4);
         //View.drawPath(this.path);
         
-        this.loop();
-        //if (Controller.can('finish')) {
-        //    Controller.finish();
-        //}
         
+        //this.loop();
+        if (Controller.can('finish')) {
+            Controller.finish();
+        }
+        console.log("Current state lepas draw semua:", Controller.current); 
         // => searching
     },
+
     onsearchAuto: function (startX, startY, endX, endY) {
         console.log("onsearchAuto triggered dalam!");
         console.log("Current state auto:", Controller.current); 
@@ -379,7 +411,9 @@ $.extend(Controller, {
         // Therefore, we have to defer the `abort` routine to make sure
         // that all the animations are done by the time we clear the colors.
         // The same reason applies for the `onreset` event handler.
-        setTimeout(function() {
+        setTimeout(function () {
+            //location.reload();
+
             Controller.clearOperations();
             Controller.clearFootprints();
             Controller.start();
@@ -400,17 +434,24 @@ $.extend(Controller, {
     },
     onfinish: function(event, from, to) {
         View.showStats({
-            pathLength: PF.Util.pathLength(this.path),
+            pathLength: PF.Util.pathLength(this.paths),
             timeSpent:  this.timeSpent,
             operationCount: this.operationCount,
         });
-        View.drawPath(this.path);
+        //View.drawPath(this.path);
+        for (let i = 0; i < this.paths.length; i++) {
+            View.drawPath(this.paths[i], i); // Pass index to change color
+        }
         // => finished
     },
     onclear: function(event, from, to) {
         this.clearOperations();
         this.clearFootprints();
+
         // => ready
+        location.reload();
+
+
     },
     onmodify: function(event, from, to) {
         // => modified

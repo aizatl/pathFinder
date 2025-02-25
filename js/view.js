@@ -18,32 +18,40 @@ var View = {
             fill: 'rgba(128, 128, 128, 0.7)', 
             'stroke-opacity': 1.2,
             
-            image: "http://localhost:53175/doc/lifttwo.png",
+            image: "http://localhost:51188/doc/lifttwo.png",
             
             size:25
         },
         stair: {
             fill: 'rgba(128, 128, 128, 0.7)',
             'stroke-opacity': 1.2,
-            image: "http://localhost:53175/doc/stair2r.png",
+            image: "http://localhost:51188/doc/stair2r.png",
             size: 25
         },
         escalator: {
             fill: 'rgba(128, 128, 128, 0.7)',
             'stroke-opacity': 1.2,
-            image: "http://localhost:53175/doc/escalator.png",
+            image: "http://localhost:51188/doc/escalator.png",
             
             size: 25
         },
         start: {
-            fill: '#0d0',
+            //fill: '#0d0',
+            //'stroke-opacity': 1.2,
+            //'fill-opacity': 0.5,
+            fill: 'rgba(128, 128, 128, 0.7)',
             'stroke-opacity': 1.2,
-            'fill-opacity': 0.5,
+            image: "http://localhost:51188/doc/startreal.png",
+
+            size: 25
         },
         end: {
-            fill: '#e40',
-            'stroke-opacity': 0.2,
-            'fill-opacity': 0.5, 
+            //fill: '#e40',
+            //'stroke-opacity': 0.2,
+            //'fill-opacity': 0.5, 
+            fill: 'rgba(128, 128, 128, 0.7)',
+            'stroke-opacity': 1.2,
+            image: "http://localhost:51188/doc/end.png",
         },
         opened: {
             fill: 'rgba(152, 251, 152, 0)', // Light green transparent
@@ -73,7 +81,7 @@ var View = {
         transformBack: 's1.0',
     },
     pathStyle: {
-        stroke: 'yellow',
+        stroke: 'green',
         'stroke-width': 3,
     },
     supportedOperations: ['opened', 'closed', 'tested'],
@@ -149,8 +157,11 @@ var View = {
     },
     setStartPos: function(gridX, gridY) {
         var coord = this.toPageCoordinate(gridX, gridY);
+        var imgSize = this.nodeStyle.start.size || 25; // Default size if not set
+
         if (!this.startNode) {
-            this.startNode = this.paper.rect(
+            this.startNode = this.paper.image(
+                this.nodeStyle.start.image, 
                 coord[0],
                 coord[1],
                 this.nodeSize,
@@ -164,7 +175,8 @@ var View = {
     setEndPos: function(gridX, gridY) {
         var coord = this.toPageCoordinate(gridX, gridY);
         if (!this.endNode) {
-            this.endNode = this.paper.rect(
+            this.endNode = this.paper.image(
+                this.nodeStyle.end.image, 
                 coord[0],
                 coord[1],
                 this.nodeSize,
@@ -357,12 +369,17 @@ var View = {
             }
         }
     },
-    drawPath: function(path) {
+    drawPath: function(path, index) {
         if (!path.length) {
             return;
         }
+        const colors = ["#00FF00", "#FFD700", "#FF4500"];
         var svgPath = this.buildSvgPath(path);
-        this.path = this.paper.path(svgPath).attr(this.pathStyle);
+        let color = colors[index] || "black";
+        this.path = this.paper.path(svgPath).attr({
+            stroke: color,
+            "stroke-width": 3
+        });
     },
     /**
      * Given a path, build its SVG represention.
