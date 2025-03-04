@@ -149,18 +149,18 @@ $.extend(Controller, {
         let latestGrid = grid.clone(); 
         for (let k = 1; k < K; k++) {
             let newGrid = latestGrid.clone(); 
-            // Block the previous path (except start and end)
-            for (let i = 1; i < paths[k - 1].length - 1; i++) { // Skip first & last nodes
+            
+            for (let i = 1; i < paths[k - 1].length - 1; i++) { 
                 let [x, y] = paths[k - 1][i];
-                newGrid.setWalkableAt(x, y, false); // Block the node to avoid repetition
+                newGrid.setWalkableAt(x, y, false); 
             }
 
             let newPath = finder.findPath(startX, startY, endX, endY, newGrid);
 
-            if (newPath.length === 0) break; // No more alternative paths
+            if (newPath.length === 0) break; 
 
             console.log('Alternative path ' + k + ': ', newPath);
-            paths.push(newPath); // Store the alternative path
+            paths.push(newPath); 
         }
 
         return paths;
@@ -169,6 +169,7 @@ $.extend(Controller, {
     onsearch: function (event, from, to) {
         let liftChecked, stairChecked, escalatorChecked;
         var currentPage = window.location.pathname;
+
         if (currentPage.includes("index.html") || currentPage === "/") {
             liftChecked = document.getElementById("checkbox_lift").checked;
             stairChecked = document.getElementById("checkbox_stair").checked;
@@ -233,6 +234,40 @@ $.extend(Controller, {
             if (this.paths.length < 1) {
                 alert('No path found');
                 return;
+            } else {
+                /*alert('You have ' + this.paths.length + ' path.');*/
+                //let choices = this.paths.map((p, index) => `${index + 1}: Path with ${p.length} steps`).join("\n");
+                //let choice = prompt(`You have ${this.paths.length} paths available. Choose one:\n${choices}`, "1");
+
+                //let chosenPathIndex = parseInt(choice) - 1;
+                //if (!isNaN(chosenPathIndex) && chosenPathIndex >= 0 && chosenPathIndex < this.paths.length) {
+                //    this.selectedPath = this.paths[chosenPathIndex];
+                //    alert(`You selected path ${chosenPathIndex + 1}`);
+                //}
+                //else {
+                //    alert("Invalid selection. Defaulting to the shortest path.");
+                //    this.selectedPath = this.paths[0]; // Default to shortest if invalid choice
+                //}
+                let choices = this.paths.map((p, index) => `${index + 1}: Path with ${p.length} steps`).join("\n");
+                choices += `\n${this.paths.length + 1}: Show all paths`; // Add option for all paths
+
+                let choice = prompt(`You have ${this.paths.length} paths to destination floor 1 available. Choose one or show all:\n${choices}`, "1");
+
+                let chosenPathIndex = parseInt(choice) - 1;
+                this.allPath = this.paths;
+                if (!isNaN(chosenPathIndex) && chosenPathIndex >= 0 && chosenPathIndex < this.paths.length) {
+                    // User chose a specific path
+                    this.paths = [this.paths[chosenPathIndex]];
+                    //alert(`You selected Path ${chosenPathIndex + 1}`);
+                } else if (chosenPathIndex === this.paths.length) {
+                    // User chose to show all paths
+                    this.paths = this.paths;
+                    //alert(`You selected all paths`);
+                } else {
+                   //alert("Invalid selection. Defaulting to the shortest path.");
+                    this.paths = [this.paths[0]]; // Default to shortest if invalid choice
+                }
+
             }
 
             console.log(`Start at (${this.startX}, ${this.startY}) and end at (${this.endX}, ${this.endY}) `);
@@ -266,10 +301,40 @@ $.extend(Controller, {
                 { x: 33, y: 15 },
             ];
             var allPossibleConnection = [];
-            if (liftChecked) allPossibleConnection = allPossibleConnection.concat(lifts);
-            if (stairChecked) allPossibleConnection = allPossibleConnection.concat(stairs);
-            if (escalatorChecked) allPossibleConnection = allPossibleConnection.concat(escalators);
+            var blockedNodes = []; // Store blocked coordinates
 
+            //if (liftChecked) allPossibleConnection = allPossibleConnection.concat(lifts);
+            //if (stairChecked) allPossibleConnection = allPossibleConnection.concat(stairs);
+            //if (escalatorChecked) allPossibleConnection = allPossibleConnection.concat(escalators);
+            let possibleConnections = []; // Stores names of possible connections
+
+            if (liftChecked) {
+                allPossibleConnection = allPossibleConnection.concat(lifts);
+                possibleConnections.push("Lift");
+            } else {
+                blockedNodes = blockedNodes.concat(lifts);
+            }
+
+            if (stairChecked) {
+                allPossibleConnection = allPossibleConnection.concat(stairs);
+                possibleConnections.push("Stair");
+            } else {
+                blockedNodes = blockedNodes.concat(stairs);
+            }
+
+            if (escalatorChecked) {
+                allPossibleConnection = allPossibleConnection.concat(escalators);
+                possibleConnections.push("Escalator");
+            } else {
+                blockedNodes = blockedNodes.concat(escalators);
+            }
+            this.possibleConnectionText = possibleConnections.join(" / "); 
+
+            for (let i = 0; i < blockedNodes.length; i++) {
+                let { x, y } = blockedNodes[i];
+                //grid.setWalkableAt(x, y, false);//set grid cannot step
+                //this.setWalkableAt(x, y, false);//set color
+            }
             console.log("Selected connections:", allPossibleConnection);
 
 
@@ -293,6 +358,7 @@ $.extend(Controller, {
                 //    }
 
                 //}
+                //let distances = [];
                 for (var i = 0; i < allPossibleConnection.length; i++) {
                     var lift = allPossibleConnection[i];
                     var tempGrid = grid.clone();
@@ -302,7 +368,9 @@ $.extend(Controller, {
 
                     
                     console.log('lift ' + (i + 1) + ' disctance mathematic is:' + temp);
-                    
+                    //distances.push({ index: i, distance: temp });
+                    //distances.sort((a, b) => a.distance - b.distance);
+
                     if (temp < shortestDistance) {
                         liftChoosen = i;
                         shortestDistance = temp;
@@ -310,13 +378,29 @@ $.extend(Controller, {
                     }
 
                 }
-
-                this.paths = finder.findPath(
-                    this.startX, this.startY, allPossibleConnection[liftChoosen].x, allPossibleConnection[liftChoosen].y, grid
-                );
+                //let top3Indexes = distances.slice(0, 3).map(item => item.index);
+                //this.paths = finder.findPath(
+                //    this.startX, this.startY, allPossibleConnection[liftChoosen].x, allPossibleConnection[liftChoosen].y, grid
+                //);
+                let K = 2; // Number of alternative paths to find
+                this.paths = this.yenKShortestPaths(grid, finder, this.startX, this.startY, allPossibleConnection[liftChoosen].x, allPossibleConnection[liftChoosen].y, K);
+                //var tempGrid = grid.clone();
+                //this.paths1 = finder.findPath(
+                //    this.startX, this.startY, allPossibleConnection[top3Indexes[0]].x, allPossibleConnection[top3Indexes[0]].y, tempGrid
+                //);
+                //var tempGrid = grid.clone();
+                //this.paths2 = finder.findPath(
+                //    this.startX, this.startY, allPossibleConnection[top3Indexes[1]].x, allPossibleConnection[top3Indexes[1]].y, tempGrid
+                //);
+                //var tempGrid = grid.clone();
+                //this.paths3 = finder.findPath(
+                //    this.startX, this.startY, allPossibleConnection[top3Indexes[2]].x, allPossibleConnection[top3Indexes[2]].y, tempGrid
+                //);
                 if (this.paths.length < 1) {
                     alert('No path found to any lift');
                     return;
+                } else {
+                    //alert('You have ' + this.paths.length + ' path to ' + this.possibleConnectionText);
                 }
                 localStorage.setItem("startLiftX", allPossibleConnection[liftChoosen].x);
                 localStorage.setItem("startLiftY", allPossibleConnection[liftChoosen].y);
@@ -333,42 +417,19 @@ $.extend(Controller, {
                 x = localStorage.getItem("startLiftX");
                 y = localStorage.getItem("startLiftY");
                 this.setStartPos(x, y);
-                this.paths = this.yenKShortestPaths(grid, finder, x, y, this.endX, this.endY, 3);
+                this.paths = this.yenKShortestPaths(grid, finder, x, y, this.endX, this.endY, 2);
                 //this.path = finder.findPath(
                 //    x, y, this.endX, this.endY, grid
                 //);
                 if (this.paths.length < 1) {
                     alert('No path found to the destination');
                     return;
+                } else {
+                    
                 }
+                this.allPAthFloorTwo = this.paths;
                 console.log(`Start at (10, 1) and end at (${this.endX}, ${this.endY}) `);
             }
-            
-        }
-        
-        //this.path = finder.findPath(
-        //    this.startX, this.startY, this.endX, this.endY, grid
-        //);
-        //for (var i = 0; i < lifts.length; i++) {
-        //    var lift = lifts[i];
-        //    var path = finder.findPath(
-        //        this.startX, this.startY, lift.x, lift.y, grid
-        //    );
-        //    if (path.length < shortestDistance) {
-        //        shortestPath = path;
-        //        shortestDistance = path.length;
-        //    }
-        //}
-
-        
-
-
-        
-        
-        if (this.paths.length > 0) {
-            console.log("Path found:", this.paths);
-        } else {
-            console.warn(`No path found! Check if the start (${this.startX}, ${this.startY}) and end (${this.endX}, ${this.endY}) positions are reachable.`);
             
         }
         this.operationCount = this.operations.length;
@@ -449,7 +510,7 @@ $.extend(Controller, {
         this.clearFootprints();
 
         // => ready
-        location.reload();
+        //location.reload();
 
 
     },
@@ -485,7 +546,7 @@ $.extend(Controller, {
             text: 'Clear Walls',
             enabled: true,
             callback: $.proxy(this.reset, this),
-        });
+        },);
         // => [starting, draggingStart, draggingEnd, drawingStart, drawingEnd]
         var currentPage = window.location.pathname; // Get current page name
         var startX, startY, endX, endY;
@@ -585,22 +646,116 @@ $.extend(Controller, {
         });
         // => [searching, ready]
     },
-    onfinished: function() {
-        var currentPage = window.location.pathname;
-        var buttonText = (currentPage === "/" || currentPage === "/index.html")
-            ? 'Restart Search'
-            : 'Back';
-        this.setButtonStates({
-            id: 1,
-            text: buttonText,
-            enabled: true,
-            callback: $.proxy(this.restart, this),
-        }, {
-            id: 2,
-            text: 'Clear Path',
-            enabled: true,
-            callback: $.proxy(this.clear, this),
-        });
+    onfinished: function () {
+        this.endFloor = this.endFloor;
+        if (this.endFloor === 1) {
+            this.paths = this.paths;
+            this.allPath = this.allPath;
+            let notSelectedIndexes = this.allPath
+                .map((paths, index) => index) // Get all indexes from allPaths
+                .filter(index => !this.paths.includes(this.allPath[index]));
+            var currentPage = window.location.pathname;
+            var notSelect = 'Show Path ' + notSelectedIndexes.map(i => i + 1).join(', ');
+            let isEnabled = notSelectedIndexes.length > 0; // Disable button if no unselected paths
+
+            var buttonText = (currentPage === "/" || currentPage === "/index.html")
+                ? 'Restart Search'
+                : 'Back';
+            this.setButtonStates({
+                id: 1,
+                text: buttonText,
+                enabled: true,
+                callback: $.proxy(this.restart, this),
+            }, {
+                id: 2,
+                text: notSelect,
+                enabled: isEnabled, // Set dynamically
+                //callback: $.proxy(this.clear, this),
+                callback: () => this.handleNotSelectedPaths(notSelectedIndexes),
+
+            });
+        }
+        else
+        {
+            var currentPage = window.location.pathname;
+            if (currentPage.includes("floortwo.html")) {
+                this.allPAthFloorTwo = this.allPAthFloorTwo;
+
+                let choices = this.paths.map((p, index) => `${index + 1}: Path with ${p.length} steps`).join("\n");
+                choices += `\n${this.paths.length + 1}: Show all paths`; // Add option for all paths
+
+                let choice = prompt(`You have ${this.paths.length} paths to destinantion floor 2 available. Choose one or show all:\n${choices}`, "1");
+
+                let chosenPathIndex = parseInt(choice) - 1;
+                this.allPath = this.paths;
+                if (!isNaN(chosenPathIndex) && chosenPathIndex >= 0 && chosenPathIndex < this.paths.length) {
+                    // User chose a specific path
+                    this.paths = [this.paths[chosenPathIndex]];
+                    //alert(`You selected Path ${chosenPathIndex + 1}`);
+                } else if (chosenPathIndex === this.paths.length) {
+                    // User chose to show all paths
+                    this.paths = this.paths;
+                    //alert(`You selected all paths`);
+                } else {
+                    //alert("Invalid selection. Defaulting to the shortest path.");
+                    this.paths = [this.paths[0]]; // Default to shortest if invalid choice
+                }
+                let notSelectedIndexes = this.allPAthFloorTwo
+                    .map((paths, index) => index)
+                    .filter(index => !this.paths.includes(this.allPAthFloorTwo[index]));
+                var notSelect = 'Show Path ' + notSelectedIndexes.map(i => i + 1).join(', ');
+                let isEnabled = notSelectedIndexes.length > 0;
+                this.setButtonStates({
+                    id: 2,
+                    text: 'Back to Floor 1',
+                    enabled: true,
+                    //callback: $.proxy(this.restart, this),
+                }, {
+                    id: 1,
+                    text: notSelect,
+                    enabled: isEnabled,
+                    callback: () => this.handleNotSelectedPaths2nd(notSelectedIndexes),
+                });
+            }
+            else {
+                this.pathsToLift = this.paths;
+
+                let choices = this.paths.map((p, index) => `${index + 1}: Path with ${p.length} steps`).join("\n");
+                choices += `\n${this.paths.length + 1}: Show all paths`; // Add option for all paths
+
+                let choice = prompt(`You have ${this.paths.length} paths to ${this.possibleConnectionText} available. Choose one or show all:\n${choices}`, "1");
+
+                let chosenPathIndex = parseInt(choice) - 1;
+                this.allPath = this.paths;
+                if (!isNaN(chosenPathIndex) && chosenPathIndex >= 0 && chosenPathIndex < this.paths.length) {
+                    // User chose a specific path
+                    this.paths = [this.paths[chosenPathIndex]];
+                    //alert(`You selected Path ${chosenPathIndex + 1}`);
+                } else if (chosenPathIndex === this.paths.length) {
+                    // User chose to show all paths
+                    this.paths = this.paths;
+                    //alert(`You selected all paths`);
+                } else {
+                    //alert("Invalid selection. Defaulting to the shortest path.");
+                    this.paths = [this.paths[0]]; // Default to shortest if invalid choice
+                }
+                let notSelectedIndexes = this.pathsToLift
+                    .map((paths, index) => index)
+                    .filter(index => !this.paths.includes(this.pathsToLift[index]));
+                var notSelect = 'Show Path ' + notSelectedIndexes.map(i => i + 1).join(', ');
+                let isEnabled = notSelectedIndexes.length > 0;
+                this.setButtonStates({
+                    id: 2,
+                    text: notSelect,
+                    enabled: isEnabled, // Set dynamically
+                    //callback: $.proxy(this.clear, this),
+                    callback: () => this.handleNotSelectedPaths(notSelectedIndexes),
+
+                });
+            }
+            
+        }
+        
        
         var currentPage = window.location.pathname;
         if (currentPage.includes("index.html") || currentPage === "/") {
@@ -615,6 +770,46 @@ $.extend(Controller, {
         }
         
 
+    },
+    handleNotSelectedPaths(notSelectedIndexes) {
+        let selectedIndex = notSelectedIndexes[0];
+        View.clearPath();
+        this.paths = this.allPath[notSelectedIndexes];
+        View.drawPath(this.paths, 0);
+
+       
+        let remainingIndexes = this.allPath
+            .map((_, index) => index) // Get all indexes from allPath
+            .filter(index => index !== selectedIndex); // Exclude the current selected path
+        var notSelect = 'Show Path ' + remainingIndexes.map(i => i + 1).join(', ');
+        //View.clearPathCustom(this.allPath[remainingIndexes]);
+        
+        this.setButtonStates({
+            id: 2,
+            text: notSelect,
+            callback: () => this.handleNotSelectedPaths(remainingIndexes),
+
+        });
+    },
+    handleNotSelectedPaths2nd(notSelectedIndexes) {
+        let selectedIndex = notSelectedIndexes[0];
+        View.clearPath();
+        this.paths = this.allPath[notSelectedIndexes];
+        View.drawPath(this.paths, 0);
+
+
+        let remainingIndexes = this.allPath
+            .map((_, index) => index) // Get all indexes from allPath
+            .filter(index => index !== selectedIndex); // Exclude the current selected path
+        var notSelect = 'Show Path ' + remainingIndexes.map(i => i + 1).join(', ');
+        //View.clearPathCustom(this.allPath[remainingIndexes]);
+
+        this.setButtonStates({
+            id: 1,
+            text: notSelect,
+            callback: () => this.handleNotSelectedPaths2nd(remainingIndexes),
+
+        });
     },
     onmodified: function() {
         console.log('=> modified');
@@ -717,6 +912,8 @@ $.extend(Controller, {
     clearFootprints: function() {
         View.clearFootprints();
         View.clearPath();
+        this.paths = [];
+        this.path = null;
     },
     clearAll: function() {
         this.clearFootprints();
@@ -725,7 +922,102 @@ $.extend(Controller, {
     buildNewGrid: function() {
         this.grid = new PF.Grid(this.gridSize[0], this.gridSize[1]);
     },
+    getClosestPathPoint: function (landmark) {
+        if (this.paths === null || this.paths === undefined) return null;
+        let minDist = Infinity;
+        let closestPoint = null;
+        
+        for (let pathPoint of this.paths) {
+            let [pathX, pathY] = pathPoint;
+            let dist = Math.abs(pathX - landmark.x) + Math.abs(pathY - landmark.y); // Manhattan distance
+
+            if (dist < minDist) {
+                minDist = dist;
+                closestPoint = { x: pathX, y: pathY };
+            }
+        }
+
+        return closestPoint || landmark; // Default to landmark if no path point is found
+    },
+    getDirectionIconq: function (from, to) {
+        if (!from || !to) return "";
+
+        if (to.x > from.x) return "--> right";
+        if (to.x < from.x) return "<-- left";
+        if (to.y > from.y) return " Down";
+        if (to.y < from.y) return " behind";
+
+        return "wrong";
+    },
+    getDirectionIconm: function (landmark, from, to) {
+        if (!from || !to) return "";
+
+        let direction = "";
+
+        if (to.x > from.x) direction = "--> right";
+        if (to.x < from.x) direction = "<-- left";
+        if (to.y > from.y) direction = "opposite";
+        if (to.y < from.y) direction = "behind";
+
+        // **Check if the landmark is behind the path**
+        let landmarkFacingPath =
+            (landmark.y === from.y && landmark.y === to.y) ||
+            (landmark.x === from.x && landmark.x === to.x);
+
+        if (!landmarkFacingPath) {
+            if (to.x > from.x) direction = "<-- left";
+            if (to.x < from.x) direction = "--> right";
+            if (to.y > from.y) direction = "opposite";
+            if (to.y < from.y) direction = "behind";
+        }
+
+        return direction;
+    },
+    getDirectionIcon: function (landmark, from, to, wallPosition) {
+        if (!from || !to) return "";
+
+        let direction = "";
+
+        if (to.x > from.x) direction = "right ";
+        if (to.x < from.x) direction = "left";
+        if (to.y > from.y) direction = "opposite";
+        if (to.y < from.y) direction = "behind";
+
+        // **Check if the landmark is behind the path**
+        let landmarkBelowPath =
+            (from.y > landmark.y);
+        
+        let same = (from.y === landmark.y);
+        if (!landmarkBelowPath && !same) {
+            if (to.x > from.x) direction = "left";
+            if (to.x < from.x) direction = "right";
+            if (to.y > from.y) direction = "opposite";
+            if (to.y < from.y) direction = "behind";
+        }
+        if (wallPosition) {
+            if (wallPosition.y > landmark.y) {
+                direction = "wall is down";
+                if (to.x > from.x) direction = "left";
+                if (to.x < from.x) direction = "right";
+            }
+            else if (wallPosition.y < landmark.y) {
+                direction = "wall is up";
+                if (to.x > from.x) direction = "right ";
+                if (to.x < from.x) direction = "left";
+            } 
+        }
+        return direction;
+    },
+
+
+
+
     
+
+
+
+
+
 
     mousedown: function (event) {
         var coord = View.toGridCoordinate(event.pageX, event.pageY),
@@ -743,6 +1035,183 @@ $.extend(Controller, {
 
             return;
         }
+        this.landmarks = [
+            //{ x: 10, y: 6, name:'zus.jpeg' },
+            { x: 12, y: 3 , name:'crs.jpeg'},
+            { x: 19, y: 3, name: 'baskbear.mp4' },
+            { x: 13, y: 13, name: 'deliwau.jpeg' },
+            { x: 27, y: 13, name: 'sopoong.jpeg' },
+            //test
+            //{ x: 10, y: 10, name: 'sopoong.jpeg' },
+            //{ x: 10, y: 13, name: 'sopoong.jpeg' },
+            //{ x: 11, y: 7, name: 'sopoong.jpeg' },
+            //{ x: 11, y: 11, name: 'sopoong.jpeg' },
+            //{ x: 11, y: 9, name: 'sopoong.jpeg' },
+            //test
+            
+            //{ x: 32, y: 10, name: 'moneyChanger.jpeg' }
+        ];
+        let isLandmark = this.landmarks.some(landmark => landmark.x === gridX && landmark.y === gridY);
+        this.allPath = this.allPath;
+        this.paths = this.paths;
+        
+        if (isLandmark) {
+            if (this.G1 !== undefined) {
+                //View.setAttributeAt(this.G1.x, this.G1.y, 'opened');
+                //View.setAttributeAt(this.G2.x, this.G2.y, 'opened');
+            }
+            
+            let minDist = Infinity;
+            this.G1 = null;
+            this.G2 = null;
+            let landmark = this.landmarks.find(landmark => landmark.x === gridX && landmark.y === gridY);
+            if (this.paths === null || this.paths === undefined) {
+               // directionIcon = 'No path yet';
+            }
+            else {
+                console.log("this.paths:", JSON.stringify(this.paths)); 
+
+                if (Array.isArray(this.paths[0]) && Array.isArray(this.paths[0][0])) {
+                    this.pathsForLandmark = this.paths[0];
+                } else {
+                    this.pathsForLandmark = this.paths;
+                }
+
+                //console.log('check sini1:', JSON.stringify(this.pathsForLandmark));
+
+                //console.log('check sini: ' + this.pathsForLandmark);
+                let landmarkIndex = this.pathsForLandmark.findIndex(
+                    ([pathX, pathY]) => pathX === landmark.x && pathY === landmark.y
+                );
+                if (landmarkIndex !== -1) {
+                    landmark = landmark;//here store x and y for landmark
+                    let directions = [
+                        { dx: 0, dy: -1 },  // UP
+                        { dx: 0, dy: 1 },   // DOWN
+                        { dx: -1, dy: 0 },  // LEFT
+                        { dx: 1, dy: 0 }    // RIGHT
+                    ];
+                    this.wallPosition = null;
+                    for (let { dx, dy } of directions) {
+                        let checkX = landmark.x + dx;
+                        let checkY = landmark.y + dy;
+
+                        if (View.blockedNodes[checkY]?.[checkX]) {
+                            this.wallPosition = { x: checkX, y: checkY };
+                            break; 
+                        }
+                    }
+                    
+
+
+
+                    if (landmarkIndex + 1 < this.pathsForLandmark.length) {
+                        this.G1 = { x: this.pathsForLandmark[landmarkIndex + 1][0], y: this.pathsForLandmark[landmarkIndex + 1][1] };
+                    }
+                    if (landmarkIndex + 2 < this.pathsForLandmark.length) {
+                        this.G2 = { x: this.pathsForLandmark[landmarkIndex + 2][0], y: this.pathsForLandmark[landmarkIndex + 2][1] };
+                    }
+                }
+                else {
+                    let minDist = Infinity;
+                    let tempG1 = null;
+
+                    for (let pathPoint of this.pathsForLandmark) {
+                        let [pathX, pathY] = pathPoint;
+                        let dist = Math.abs(pathX - landmark.x) + Math.abs(pathY - landmark.y);
+
+                        //radius 2 tiles/grid only
+                        if (dist <= 2 && dist < minDist) {
+                            minDist = dist;
+                            tempG1 = { x: pathX, y: pathY };
+                        }
+                    }
+
+                    
+                    if (tempG1) {
+                        let g1Index = this.pathsForLandmark.findIndex(
+                            ([pathX, pathY]) => pathX === tempG1.x && pathY === tempG1.y
+                        );
+
+                        if (g1Index !== -1 && g1Index + 1 < this.pathsForLandmark.length) {
+                            this.G1 = tempG1;
+                            this.G2 = { x: this.pathsForLandmark[g1Index + 1][0], y: this.pathsForLandmark[g1Index + 1][1] };
+                        }
+                    }
+                }
+            }
+            //test
+            //if (this.G1 !== null){
+            //    View.setAttributeAt(this.G1.x, this.G1.y, 'icon', 'G1');
+            //    View.setAttributeAt(this.G2.x, this.G2.y, 'icon', 'G2');
+            //}
+            
+            let fileUrl = `http://localhost:51188/doc/landmarks/${landmark.name}`;
+
+            let isVideo = landmark.name.endsWith('.mp4');
+            //let closestPathPoint = this.getClosestPathPoint({ x: gridX, y: gridY });
+            let directionIcon = null;
+            if (this.G1 === null) {
+                directionIcon = 'No path near this landmark';
+            } else {
+                this.wallPosition = this.wallPosition;
+                //console.log('Landmark: ' + landmark.x + ', ' + landmark.y);
+                //console.log('wall position is:' + this.wallPosition.x + ", " + this.wallPosition.y);
+                //let arrowDirection = this.getDirectionIconm(landmark, this.G1, this.G2);
+                let arrowDirectionNew = this.getDirectionIcon(landmark, this.G1, this.G2, this.wallPosition);
+                //let arrowDirectionOg = this.getDirectionIconq(landmark, this.G1, this.G2, this.pathsForLandmark);
+                //directionIcon = `This landmark near with the path! Face this landmark and move toward ${arrowDirection} of this landmark to reach the destination.`;
+                directionIcon = `Face the landmark, then proceed to ${arrowDirectionNew}.`;
+                //directionIcon = `og: ${arrowDirectionOg}, second: ${arrowDirection}, latest: ${arrowDirectionNew}.`;
+                
+
+            }
+            if (this.isEndPos(gridX, gridY)) {
+                directionIcon = 'This landmark is the destination';
+            }
+            
+            
+
+            
+
+           // Swal.fire({
+           //     title: "",
+           //     text: directionIcon,
+           //     imageUrl: isVideo ? "" : fileUrl,
+           //     html: isVideo
+           //         ? `<video width="450" height="300" controls autoplay>
+           //   <source src="${fileUrl}" type="video/mp4">
+           //   Your browser does not support the video tag.
+           //</video>`
+           //         : "", // Embed video inside HTML
+           //     imageWidth: 455,
+           //     imageHeight: 370,
+           //     imageAlt: "Landmark Icon",
+           //     didOpen: () => {
+           //         document.querySelector('.swal2-confirm').style.minWidth = '80px';
+           //     }
+            // });
+            Swal.fire({
+                title: "",
+                html: `
+                <p style="font-size: 18px; font-weight: bold; margin-bottom: 10px;">${directionIcon}</p>
+                ${isVideo ? `<video width="450" height="250" controls autoplay>
+                <source src="${fileUrl}" type="video/mp4">
+                   Your browser does not support the video tag.
+               </video>`: `<img src="${fileUrl}" width="450" height="370" alt="Landmark Icon" style="display: block; margin: auto;">`
+                    }
+    `,
+                showConfirmButton: true,
+                didOpen: () => {
+                    document.querySelector('.swal2-confirm').style.minWidth = '80px';
+                }
+            });
+
+
+
+            return;
+        }
+
 
         if (this.can('dragStart') && this.isStartPos(gridX, gridY)) {
             this.dragStart();
@@ -1122,7 +1591,23 @@ window.onload = function () {
     View.setAttributeAt(33, 2, 'icon', 'stair');
     View.setAttributeAt(33, 15, 'icon', 'stair');
 
+    //View.setAttributeAt(10, 6, 'icon', 'landmark');
+    View.setAttributeAt(12, 3, 'icon', 'landmark');
+    View.setAttributeAt(19, 3, 'icon', 'landmark');
+    
 
+    View.setAttributeAt(13, 13, 'icon', 'landmark');
+    View.setAttributeAt(27, 13, 'icon', 'landmark');
+    //View.setAttributeAt(32, 10, 'icon', 'landmark');
+
+    //test
+    //View.setAttributeAt(10, 10, 'icon', 'landmark');
+    //View.setAttributeAt(10, 13, 'icon', 'landmark');
+    //View.setAttributeAt(11, 7, 'icon', 'landmark');
+    //View.setAttributeAt(11, 11, 'icon', 'landmark');
+    //View.setAttributeAt(11, 9, 'icon', 'landmark');
+    
+    
     var currentPage = window.location.pathname;
     if (currentPage.includes("/floortwo.html")) {
         var savedLifts = JSON.parse(localStorage.getItem("customLifts")) || [];

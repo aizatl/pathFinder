@@ -46,8 +46,9 @@ var Panel = {
                                      '.bi-directional:checked').val() !=='undefined';
             dontCrossCorners = typeof $('#astar_section ' +
                                      '.dont_cross_corners:checked').val() !=='undefined';
-                allowDiagonal = true;
+                allowDiagonal = false;
                 dontCrossCorners = true;
+                biDirectional = true;
 
             /* parseInt returns NaN (which is falsy) if the string can't be parsed */
             weight = parseInt($('#astar_section .spinner').val()) || 1;

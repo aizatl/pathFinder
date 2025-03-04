@@ -28,6 +28,12 @@ var View = {
             image: "http://localhost:51188/doc/stair2r.png",
             size: 25
         },
+        star: {
+            fill: 'rgba(128, 128, 128, 0.7)',
+            'stroke-opacity': 1.2,
+            image: "http://localhost:51188/doc/star1.png",
+            size: 25
+        },
         escalator: {
             fill: 'rgba(128, 128, 128, 0.7)',
             'stroke-opacity': 1.2,
@@ -70,10 +76,27 @@ var View = {
             'stroke-opacity': 0.1,
             'fill-opacity': 0.0,
         },
+        //test
+        g1: {
+            //fill: '#e40',
+            //'stroke-opacity': 0.2,
+            //'fill-opacity': 0.5, 
+            fill: 'rgba(128, 128, 128, 0.7)',
+            'stroke-opacity': 1.2,
+            image: "http://localhost:51188/doc/g1.png",
+        },
+        g2: {
+            //fill: '#e40',
+            //'stroke-opacity': 0.2,
+            //'fill-opacity': 0.5, 
+            fill: 'rgba(128, 128, 128, 0.7)',
+            'stroke-opacity': 1.2,
+            image: "http://localhost:51188/doc/g2.png",
+        },
 
     },
     nodeColorizeEffect: {
-        duration: 10,
+        duration: 0,
     },
     nodeZoomEffect: {
         duration: 200,
@@ -237,8 +260,8 @@ var View = {
         }, this.nodeZoomEffect.duration);
     },
     setWalkableAt: function (gridX, gridY, value) {
-        aizat = 1 + 1;
-        //console.log('siniaizat:' + gridX + "," + gridY);
+
+        console.log('siniaizat:' + gridX + "," + gridY);
         var node, i, blockedNodes = this.blockedNodes;
         //var imageUrl = this.nodeStyle.blocked.image;
         if (!blockedNodes) {
@@ -249,6 +272,7 @@ var View = {
         }
        
         node = blockedNodes[gridY][gridX];
+        //node = blockedNodes[27][13];
 
         if (value) {
             // clear blocked node
@@ -336,6 +360,22 @@ var View = {
                     fill: `url(${this.nodeStyle.stair.image})`
                 });
             }
+            else if (value === 'landmark') {
+                node.attr({
+                    fill: `url(${this.nodeStyle.star.image})`
+                });
+            }//test
+            else if (value === 'G1') {
+                node.attr({
+                    fill: `url(${this.nodeStyle.g1.image})`
+                });
+            }
+            else if (value === 'G2') {
+                node.attr({
+                    fill: `url(${this.nodeStyle.g2.image})`
+                });
+            }
+            //test
             else {
                 node.attr({
                     fill: `url(${this.nodeStyle.lift.image})`
@@ -396,8 +436,13 @@ var View = {
 
         return strs.join('');
     },
-    clearPath: function() {
+    clearPath: function () {
         if (this.path) {
+            this.path.remove();
+        }
+    },
+    clearPathCustom: function (pathPassed) {
+        if (pathPassed) {
             this.path.remove();
         }
     },
