@@ -1,6 +1,6 @@
 <!DOCTYPE HTML>
 <html lang="en">
-  <head>
+<head>
     <meta charset="UTF-8">
     <title>Floor 2</title>
 
@@ -26,7 +26,8 @@
     <script type="text/javascript" src="./js/controller.js"></script>
     <script type="text/javascript" src="./js/panel.js"></script>
     <script type="text/javascript" src="./js/main.js"></script>
-  </head>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
   <body>
       <div id="draw_area"></div>
 
@@ -220,6 +221,7 @@
       </div><!-- #algorithm_panel -->
 
       <div id="play_panel" class="panel right_panel" style="display: inline-block; padding: 5px; text-align: center; width: 130px;">
+          <button id="3" class="control_button" style="width: auto; min-width: 80px;">Show Path</button>
           <button id="4" class="control_button" onclick="goBack()" style="width: auto; min-width: 80px;">Back</button>
       </div>
 
